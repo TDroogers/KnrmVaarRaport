@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "KnrmVaarRaport": {
+      "commandName": "Project",
+      "commandLineArgs": "VAAR2021.csv"
+    }
+  }
+}

@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KnrmVaarRaport", "KnrmVaarRaport\KnrmVaarRaport.csproj", "{04F39EA8-E2FC-4506-A7B4-02659292908F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{04F39EA8-E2FC-4506-A7B4-02659292908F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{04F39EA8-E2FC-4506-A7B4-02659292908F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{04F39EA8-E2FC-4506-A7B4-02659292908F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{04F39EA8-E2FC-4506-A7B4-02659292908F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {250E0A14-B815-450D-B942-6DB009F3C3DC}
+	EndGlobalSection
+EndGlobal
