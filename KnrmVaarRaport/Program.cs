@@ -30,6 +30,7 @@ namespace KnrmVaarRaport
                 if (_path == null) return;
                 var sd = new SortedDictionary<string, KnrmHelden>();
                 ReadFile(sd);
+                AskToContinue();
                 WriteResultFile(sd);
             }
             catch (IOException e)
@@ -41,44 +42,71 @@ namespace KnrmVaarRaport
 
         private static void ReadFile(SortedDictionary<string, KnrmHelden> sd)
         {
-            using (var sr = new StreamReader(_path))//"VAAR2021.csv"
+            using var sr = new StreamReader(_path);//"VAAR2021.csv"
+            var i = 0;
+            while (true)
             {
-                var i = 0;
-                while (true)
+                var line = sr.ReadLine();
+                if (i != 0)
                 {
-                    var line = sr.ReadLine();
-                    if (i != 0)
-                    {
-                        if (line == null) break;
-                        var inzet = SplitCsv(line);
-                        var isInzet = Regex.IsMatch(inzet[3], "[^[0-9]]|[-]");
-                        var hours = double.Parse(inzet[9].Replace(',', '.'));
-                        var schipper = inzet[10];
-                        var opstapper1 = inzet[11];
-                        var opstapper2 = inzet[12];
-                        var opstapper3 = inzet[13];
-                        var opstapper4 = inzet[14];
-                        var opstapper5 = inzet[15];
-                        UpdateKnrmHelper(sd, schipper, isInzet, hours);
-                        if (string.Compare(schipper, opstapper1) != 0)
-                            UpdateKnrmHelper(sd, opstapper1, isInzet, hours);
-                        if (!(schipper + opstapper1).Contains(opstapper2, StringComparison.CurrentCulture))
-                            UpdateKnrmHelper(sd, opstapper2, isInzet, hours);
-                        if (!(schipper + opstapper1 + opstapper2).Contains(opstapper3, StringComparison.CurrentCulture))
-                            UpdateKnrmHelper(sd, opstapper3, isInzet, hours);
-                        if (!(schipper + opstapper1 + opstapper2 + opstapper3).Contains(opstapper4, StringComparison.CurrentCulture))
-                            UpdateKnrmHelper(sd, opstapper4, isInzet, hours);
-                        if (!(schipper + opstapper1 + opstapper2 + opstapper3 + opstapper4).Contains(opstapper5, StringComparison.CurrentCulture))
-                            UpdateKnrmHelper(sd, opstapper5, isInzet, hours);
-                    }
-                    i++;
+                    if (line == null) break;
+                    var inzet = SplitCsv(line);
+                    var isInzet = Regex.IsMatch(inzet[3], "^[0-9].*-");
+                    Console.WriteLine(isInzet + " " + inzet[3]);
+                    var hours = double.Parse(inzet[9].Replace(',', '.'));
+                    var schipper = inzet[10];
+                    var opstapper1 = inzet[11];
+                    var opstapper2 = inzet[12];
+                    var opstapper3 = inzet[13];
+                    var opstapper4 = inzet[14];
+                    var opstapper5 = inzet[15];
+                    UpdateKnrmHelper(sd, schipper, isInzet, hours);
+                    if (string.Compare(schipper, opstapper1) != 0)
+                        UpdateKnrmHelper(sd, opstapper1, isInzet, hours);
+                    if (!(schipper + opstapper1).Contains(opstapper2, StringComparison.CurrentCulture))
+                        UpdateKnrmHelper(sd, opstapper2, isInzet, hours);
+                    if (!(schipper + opstapper1 + opstapper2).Contains(opstapper3, StringComparison.CurrentCulture))
+                        UpdateKnrmHelper(sd, opstapper3, isInzet, hours);
+                    if (!(schipper + opstapper1 + opstapper2 + opstapper3).Contains(opstapper4, StringComparison.CurrentCulture))
+                        UpdateKnrmHelper(sd, opstapper4, isInzet, hours);
+                    if (!(schipper + opstapper1 + opstapper2 + opstapper3 + opstapper4).Contains(opstapper5, StringComparison.CurrentCulture))
+                        UpdateKnrmHelper(sd, opstapper5, isInzet, hours);
+                }
+                i++;
+            }
+        }
+
+        private static void UpdateKnrmHelper(SortedDictionary<string, KnrmHelden> sd, string redder, bool isInzet, double hours)
+        {
+            if (string.IsNullOrWhiteSpace(redder) || string.Compare(redder, "n.v.t.", true) == 0 || int.TryParse(redder, out int ignore))
+                return;
+            if (!sd.ContainsKey(redder))
+                sd.Add(redder, new KnrmHelden(redder));
+            sd.TryGetValue(redder, out var held);
+            if (held != null)
+            {
+                if (isInzet)
+                {
+                    held.AddAction();
+                    held.AddActionsHours(hours);
+                }
+                else
+                {
+                    held.AddTraining();
+                    held.AddTrainingHours(hours);
                 }
             }
         }
 
+        private static void AskToContinue()
+        {
+            Console.Write("Druk op enter om het resultaat te verwerken ;)");
+            while (Console.ReadKey().Key != ConsoleKey.Enter) { }
+        }
+
         private static string[] SplitCsv(string line)
         {
-            List<string> result = new List<string>();
+            var result = new List<string>();
             line = line.Trim('"');
             var startIndex = 0;
             while (true)
@@ -111,39 +139,15 @@ namespace KnrmVaarRaport
             return result.ToArray();
         }
 
-        private static void UpdateKnrmHelper(SortedDictionary<string, KnrmHelden> sd, string redder, bool isInzet, double hours)
-        {
-            if (string.IsNullOrWhiteSpace(redder) || string.Compare(redder, "n.v.t.", true) == 0 || int.TryParse(redder, out int ignore))
-                return;
-            if (!sd.ContainsKey(redder))
-                sd.Add(redder, new KnrmHelden(redder));
-            sd.TryGetValue(redder, out var held);
-            if (held != null)
-            {
-                if (isInzet)
-                {
-                    held.AddAction();
-                    held.AddActionsHours(hours);
-                }
-                else
-                {
-                    held.AddTraining();
-                    held.AddTrainingHours(hours);
-                }
-            }
-        }
-
         private static void WriteResultFile(SortedDictionary<string, KnrmHelden> sd)
         {
-            using (FileStream fs = File.Create("result" + DateTime.Now.Ticks + ".csv"))
+            using FileStream fs = File.Create("result" + DateTime.Now.Ticks + ".csv");
+            Byte[] row = new UTF8Encoding(true).GetBytes("Redder,acties,actie uren,trainingen,training uren,totaal,totaal uren\r\n");
+            fs.Write(row, 0, row.Length);
+            foreach (var held in sd)
             {
-                Byte[] row = new UTF8Encoding(true).GetBytes("Redder,acties,actie uren,trainingen,training uren,totaal,totaal uren\r\n");
+                row = new UTF8Encoding(true).GetBytes(held.Value.Name + "," + held.Value.Actions + "," + held.Value.HoursActions + "," + held.Value.Training + "," + held.Value.HoursTraining + "," + held.Value.TotalActivities + "," + held.Value.HoursTotal + "\r\n");
                 fs.Write(row, 0, row.Length);
-                foreach (var held in sd)
-                {
-                    row = new UTF8Encoding(true).GetBytes(held.Value.Name + "," + held.Value.Actions + "," + held.Value.HoursActions + "," + held.Value.Training + "," + held.Value.HoursTraining + "," + held.Value.TotalActivities + "," + held.Value.HoursTotal + "\r\n");
-                    fs.Write(row, 0, row.Length);
-                }
             }
         }
     }
