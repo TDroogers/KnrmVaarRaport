@@ -142,11 +142,13 @@ namespace KnrmVaarRaport
         private static void WriteResultFile(SortedDictionary<string, KnrmHelden> sd)
         {
             using FileStream fs = File.Create("result" + DateTime.Now.Ticks + ".csv");
-            Byte[] row = new UTF8Encoding(true).GetBytes("Redder,acties,actie uren,trainingen,training uren,totaal,totaal uren\r\n");
+            Byte[] row = new UTF8Encoding(true).GetBytes("Redder;acties;actie uren;trainingen;training uren;totaal;totaal uren\r\n");
             fs.Write(row, 0, row.Length);
             foreach (var held in sd)
             {
-                row = new UTF8Encoding(true).GetBytes(held.Value.Name + "," + held.Value.Actions + "," + held.Value.HoursActions.ToString("F1", CultureInfo.InvariantCulture) + "," + held.Value.Training + "," + held.Value.HoursTraining.ToString("F1", CultureInfo.InvariantCulture) + "," + held.Value.TotalActivities + "," + held.Value.HoursTotal.ToString("F1", CultureInfo.InvariantCulture) + "\r\n");
+                row = new UTF8Encoding(true).GetBytes(held.Value.Name + ";" + held.Value.Actions + ";" + held.Value.HoursActions.ToString("F1", CultureInfo.InvariantCulture).Replace('.',',') + ";" + 
+                    held.Value.Training + ";" + held.Value.HoursTraining.ToString("F1", CultureInfo.InvariantCulture).Replace('.', ',') + ";" + 
+                    held.Value.TotalActivities + ";" + held.Value.HoursTotal.ToString("F1", CultureInfo.InvariantCulture).Replace('.', ',') + "\r\n");
                 fs.Write(row, 0, row.Length);
             }
         }
