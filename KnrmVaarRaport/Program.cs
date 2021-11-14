@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+﻿using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -146,7 +146,7 @@ namespace KnrmVaarRaport
             fs.Write(row, 0, row.Length);
             foreach (var held in sd)
             {
-                row = new UTF8Encoding(true).GetBytes(held.Value.Name + "," + held.Value.Actions + "," + held.Value.HoursActions + "," + held.Value.Training + "," + held.Value.HoursTraining + "," + held.Value.TotalActivities + "," + held.Value.HoursTotal + "\r\n");
+                row = new UTF8Encoding(true).GetBytes(held.Value.Name + "," + held.Value.Actions + "," + held.Value.HoursActions.ToString("F1", CultureInfo.InvariantCulture) + "," + held.Value.Training + "," + held.Value.HoursTraining.ToString("F1", CultureInfo.InvariantCulture) + "," + held.Value.TotalActivities + "," + held.Value.HoursTotal.ToString("F1", CultureInfo.InvariantCulture) + "\r\n");
                 fs.Write(row, 0, row.Length);
             }
         }
