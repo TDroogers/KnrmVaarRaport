@@ -7,6 +7,9 @@ namespace KnrmVaarRaport
     public class Program
     {
         private static string _path = string.Empty;
+        private static SortedDictionary<string, KnrmHeld> _sdHelden;
+        private static SortedDictionary<string, TypeInzet> _sdInzet;
+        private static SortedDictionary<string, Boot> _sdBoot;
         public static void Main(string[] args)
         {
             if (ReadArgs(args) && !string.IsNullOrEmpty(_path))
@@ -28,10 +31,12 @@ namespace KnrmVaarRaport
             try
             {
                 if (_path == null) return;
-                var sd = new SortedDictionary<string, KnrmHelden>();
-                ReadFile(sd);
+                _sdHelden = new SortedDictionary<string, KnrmHeld>();
+                _sdInzet = new SortedDictionary<string, TypeInzet>();
+                _sdBoot = new SortedDictionary<string, Boot>();
+                ReadFile();
                 AskToContinue();
-                WriteResultFile(sd);
+                WriteResultFile();
             }
             catch (IOException e)
             {
@@ -40,7 +45,7 @@ namespace KnrmVaarRaport
             }
         }
 
-        private static void ReadFile(SortedDictionary<string, KnrmHelden> sd)
+        private static void ReadFile()
         {
             using var sr = new StreamReader(_path);//"VAAR2021.csv"
             var i = 0;
@@ -60,42 +65,57 @@ namespace KnrmVaarRaport
                     var opstapper3 = inzet[13];
                     var opstapper4 = inzet[14];
                     var opstapper5 = inzet[15];
-                    UpdateKnrmHelper(sd, schipper, isInzet, hours);
+                    var typeInzet = UpdateTypeInzet(inzet[1], hours);
+                    var boot = UpdasteBoot(inzet[2], hours);
+                    UpdateKnrmHelper(schipper, hours, typeInzet, boot);
                     if (string.Compare(schipper, opstapper1) != 0)
-                        UpdateKnrmHelper(sd, opstapper1, isInzet, hours);
+                        UpdateKnrmHelper(opstapper1, hours, typeInzet, boot);
                     if (!(schipper + opstapper1).Contains(opstapper2, StringComparison.CurrentCulture))
-                        UpdateKnrmHelper(sd, opstapper2, isInzet, hours);
+                        UpdateKnrmHelper(opstapper2, hours, typeInzet, boot);
                     if (!(schipper + opstapper1 + opstapper2).Contains(opstapper3, StringComparison.CurrentCulture))
-                        UpdateKnrmHelper(sd, opstapper3, isInzet, hours);
+                        UpdateKnrmHelper(opstapper3, hours, typeInzet, boot);
                     if (!(schipper + opstapper1 + opstapper2 + opstapper3).Contains(opstapper4, StringComparison.CurrentCulture))
-                        UpdateKnrmHelper(sd, opstapper4, isInzet, hours);
+                        UpdateKnrmHelper(opstapper4, hours, typeInzet, boot);
                     if (!(schipper + opstapper1 + opstapper2 + opstapper3 + opstapper4).Contains(opstapper5, StringComparison.CurrentCulture))
-                        UpdateKnrmHelper(sd, opstapper5, isInzet, hours);
+                        UpdateKnrmHelper(opstapper5, hours, typeInzet, boot);
                 }
                 i++;
             }
         }
 
-        private static void UpdateKnrmHelper(SortedDictionary<string, KnrmHelden> sd, string redder, bool isInzet, double hours)
+        private static TypeInzet UpdateTypeInzet(string typeInzet, double hours)
+        {
+            if (!_sdInzet.ContainsKey(typeInzet))
+                _sdInzet.Add(typeInzet, new TypeInzet() { Name = typeInzet });
+            _sdInzet.TryGetValue(typeInzet, out var inzetObject);
+            inzetObject.Count++;
+            inzetObject.SetHours(hours);
+            return inzetObject;
+        }
+
+        private static Boot UpdasteBoot(string boot, double hours)
+        {
+            if (!_sdBoot.ContainsKey(boot))
+                _sdBoot.Add(boot, new Boot() { Name = boot });
+            _sdBoot.TryGetValue(boot, out var bootObject);
+            bootObject.Count++;
+            bootObject.SetHours(hours);
+            return bootObject;
+        }
+
+        private static void UpdateKnrmHelper(string redder, double hours, TypeInzet typeInzet, Boot boot)
         {
             if (string.IsNullOrWhiteSpace(redder) || string.Compare(redder, "n.v.t.", true) == 0 || int.TryParse(redder, out int ignore))
                 return;
-            if (!sd.ContainsKey(redder))
-                sd.Add(redder, new KnrmHelden(redder));
-            sd.TryGetValue(redder, out var held);
-            if (held != null)
-            {
-                if (isInzet)
-                {
-                    held.AddAction();
-                    held.AddActionsHours(hours);
-                }
-                else
-                {
-                    held.AddTraining();
-                    held.AddTrainingHours(hours);
-                }
-            }
+            if (!_sdHelden.ContainsKey(redder))
+                _sdHelden.Add(redder, new KnrmHeld() { Name = redder});
+            _sdHelden.TryGetValue(redder, out var held);
+            if (held == null)
+                return;
+            held.AddInzet(typeInzet, hours);
+            held.AddBoot(boot, hours);
+            held.Count++;
+            held.SetHours(hours);
         }
 
         private static void AskToContinue()
@@ -139,18 +159,50 @@ namespace KnrmVaarRaport
             return result.ToArray();
         }
 
-        private static void WriteResultFile(SortedDictionary<string, KnrmHelden> sd)
+        private static void WriteResultFile()
         {
             using FileStream fs = File.Create("result" + DateTime.Now.Ticks + ".csv");
-            Byte[] row = new UTF8Encoding(true).GetBytes("Redder;acties;actie uren;trainingen;training uren;totaal;totaal uren\r\n");
+            byte[] row = GetRowTitle();
             fs.Write(row, 0, row.Length);
-            foreach (var held in sd)
+            foreach (var held in _sdHelden.Values)
             {
-                row = new UTF8Encoding(true).GetBytes(held.Value.Name + ";" + held.Value.Actions + ";" + held.Value.HoursActions.ToString("F1", CultureInfo.InvariantCulture).Replace('.',',') + ";" + 
-                    held.Value.Training + ";" + held.Value.HoursTraining.ToString("F1", CultureInfo.InvariantCulture).Replace('.', ',') + ";" + 
-                    held.Value.TotalActivities + ";" + held.Value.HoursTotal.ToString("F1", CultureInfo.InvariantCulture).Replace('.', ',') + "\r\n");
+                row = GetRowHeld(held);
                 fs.Write(row, 0, row.Length);
             }
+        }
+
+        private static byte[] GetRowTitle()
+        {
+            var rowTitle = "Redder;totaal inzet;totaal uren;totaal hele uren;";
+            foreach (var inzet in _sdInzet.Values)
+            {
+                rowTitle += string.Format("{0} aantal;{0} uren; {0} hele uren;", inzet.Name);
+            }
+            foreach (var inzet in _sdBoot.Values)
+            {
+                rowTitle += string.Format("{0} aantal;{0} uren; {0} hele uren;", inzet.Name);
+            }
+            return new UTF8Encoding(true).GetBytes(string.Format("{0}\r\n",rowTitle));
+        }
+
+        private static byte[] GetRowHeld(KnrmHeld held)
+        {
+            var rowHeld = string.Format("{0};{1};{2};{3};", held.Name, held.Count, held.Hours.ToString("F1", CultureInfo.InvariantCulture).Replace('.', ','), held.HoursUp);
+            foreach (var inzet in _sdInzet.Values)
+            {
+                if (held.SdInzet.TryGetValue(inzet.Name, out var inzetHeld))
+                    rowHeld += string.Format("{0};{1};{2};", inzetHeld.Count, inzetHeld.Hours.ToString("F1", CultureInfo.InvariantCulture).Replace('.', ','), inzetHeld.HoursUp);
+                else
+                    rowHeld += "0;0;0;";
+            }
+            foreach (var inzet in _sdBoot.Values)
+            {
+                if (held.SdBoot.TryGetValue(inzet.Name, out var bootHeld))
+                    rowHeld += string.Format("{0};{1};{2};", bootHeld.Count, bootHeld.Hours.ToString("F1", CultureInfo.InvariantCulture).Replace('.', ','), bootHeld.HoursUp);
+                else
+                    rowHeld += "0;0;0;";
+            }
+            return new UTF8Encoding(true).GetBytes(string.Format("{0}\r\n", rowHeld));
         }
     }
 }
