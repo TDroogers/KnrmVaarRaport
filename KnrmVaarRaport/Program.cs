@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System.Diagnostics;
+using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -48,25 +49,36 @@ namespace KnrmVaarRaport
         private static void ReadFile()
         {
             using var sr = new StreamReader(_path);//"VAAR2021.csv"
-            var i = 0;
+            int i = 0;
+            int fieldCount = 0;
             while (true)
             {
                 var line = sr.ReadLine();
+                if (line == null) break;
+                var inzet = SplitCsv.Split(line);
                 if (i != 0)
                 {
-                    if (line == null) break;
-                    var inzet = SplitCsv(line);
-                    var isInzet = Regex.IsMatch(inzet[3], "^[0-9].*-");
-                    Console.WriteLine(isInzet + " " + inzet[3]);
-                    var hours = double.Parse(inzet[9].Replace(',', '.'));
-                    var schipper = inzet[10];
-                    var opstapper1 = inzet[11];
-                    var opstapper2 = inzet[12];
-                    var opstapper3 = inzet[13];
-                    var opstapper4 = inzet[14];
-                    var opstapper5 = inzet[15];
-                    var typeInzet = UpdateTypeInzet(inzet[1], hours);
-                    var boot = UpdasteBoot(inzet[2], hours);
+                    if (fieldCount != inzet.Count())
+                    {
+#if DEBUG
+                        Debugger.Break();
+#endif
+                        continue;
+                    }
+                    var omschrijving = inzet[11];
+                    var isInzet = Regex.IsMatch(omschrijving, "^[0-9].*-");
+                    var hours = double.Parse(inzet[10].Replace(',', '.'));
+                    var schipper = inzet[15];//10 voor kort
+                    var opstapper1 = inzet[16];
+                    var opstapper2 = inzet[17];
+                    var opstapper3 = inzet[18];
+                    var opstapper4 = inzet[19];
+                    var opstapper5 = inzet[20];
+                    var datum = inzet[1];
+                    var typeInzet = UpdateTypeInzet(inzet[2], hours);
+                    var boot = UpdasteBoot(inzet[3], hours);
+
+                    Console.WriteLine($"{isInzet} {typeInzet} {omschrijving}");
                     UpdateKnrmHelper(schipper, hours, typeInzet, boot);
                     if (string.Compare(schipper, opstapper1) != 0)
                         UpdateKnrmHelper(opstapper1, hours, typeInzet, boot);
@@ -79,6 +91,8 @@ namespace KnrmVaarRaport
                     if (!(schipper + opstapper1 + opstapper2 + opstapper3 + opstapper4).Contains(opstapper5, StringComparison.CurrentCulture))
                         UpdateKnrmHelper(opstapper5, hours, typeInzet, boot);
                 }
+                else
+                    fieldCount = inzet.Count();
                 i++;
             }
         }
@@ -108,7 +122,7 @@ namespace KnrmVaarRaport
             if (string.IsNullOrWhiteSpace(redder) || string.Compare(redder, "n.v.t.", true) == 0 || int.TryParse(redder, out int ignore))
                 return;
             if (!_sdHelden.ContainsKey(redder))
-                _sdHelden.Add(redder, new KnrmHeld() { Name = redder});
+                _sdHelden.Add(redder, new KnrmHeld() { Name = redder });
             _sdHelden.TryGetValue(redder, out var held);
             if (held == null)
                 return;
@@ -122,41 +136,6 @@ namespace KnrmVaarRaport
         {
             Console.Write("Druk op enter om het resultaat te verwerken ;)");
             while (Console.ReadKey().Key != ConsoleKey.Enter) { }
-        }
-
-        private static string[] SplitCsv(string line)
-        {
-            var result = new List<string>();
-            line = line.Trim('"');
-            var startIndex = 0;
-            while (true)
-            {
-                var i = 0;
-                while (string.Compare(line.Substring(0, 1), ",") == 0)
-                {
-                    line = line.Substring(1);
-                    if (i > 0)
-                        result.Add("");
-                    if (line.Length == 0)
-                        break;
-                    i++;
-                }
-                var first = line.IndexOf('"', startIndex);
-                if (first == -1) break;
-                if (first > 0 && line.Length > first + 1 && string.Compare(line.Substring(first + 1, 1), ",") != 0)
-                {
-                    startIndex = first + 1;
-                    continue;
-                }
-                startIndex = 0;
-                var value = line.Substring(0, first);
-                if (value.Length > 0 && string.Compare(value, ",") != 0)
-                    result.Add(value);
-                line = line.Substring(first + 1);
-                if (line.Length == 0)
-                    break;
-            }
-            return result.ToArray();
         }
 
         private static void WriteResultFile()
@@ -182,7 +161,7 @@ namespace KnrmVaarRaport
             {
                 rowTitle += string.Format("{0} aantal;{0} uren; {0} hele uren;", inzet.Name);
             }
-            return new UTF8Encoding(true).GetBytes(string.Format("{0}\r\n",rowTitle));
+            return new UTF8Encoding(true).GetBytes(string.Format("{0}\r\n", rowTitle));
         }
 
         private static byte[] GetRowHeld(KnrmHeld held)
