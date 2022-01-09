@@ -13,7 +13,7 @@ public class SplitCsvTest
     }
 
     [Fact]
-    public void IssueWithEmptyBlock()
+    public void IssueWithEmptyBlockTest()
     {
         string line = "\"text\",,\"MoreText\"";
         var result = SplitCsv.Split(line);
@@ -21,5 +21,15 @@ public class SplitCsvTest
         Assert.Equal("text", result[0]);
         Assert.Equal(string.Empty, result[1]);
         Assert.Equal("MoreText", result[2]);
+    }
+
+    [Fact]
+    public void ToArrayTest()
+    {
+        string line = "[\"\"Bergingsmaatschappij\"\",\"\"Reddingbrigade Naarden\"\"]";
+        var result = SplitCsv.ToArray(line);
+        Assert.True(result.Length == 2);
+        Assert.Equal("Bergingsmaatschappij", result[0]);
+        Assert.Equal("Reddingbrigade Naarden", result[1]);
     }
 }

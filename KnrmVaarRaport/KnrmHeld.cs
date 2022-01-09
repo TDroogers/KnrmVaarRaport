@@ -9,11 +9,11 @@ namespace KnrmVaarRaport
     internal class KnrmHeld : BaseData
     {
         internal SortedDictionary<string, TypeInzet> SdInzet { get; private set; }
-        internal SortedDictionary<string, Boot> SdBoot { get; private set; }
+        internal SortedDictionary<string, BaseData> SdBoot { get; private set; }
         internal KnrmHeld()
         {
             SdInzet = new SortedDictionary<string, TypeInzet>();
-            SdBoot = new SortedDictionary<string, Boot>();
+            SdBoot = new SortedDictionary<string, BaseData>();
         }
 
         internal void AddInzet(TypeInzet typeInzet, double hours)
@@ -25,10 +25,10 @@ namespace KnrmVaarRaport
             inzetObject.SetHours(hours);
         }
 
-        internal void AddBoot(Boot boot, double hours)
+        internal void AddBoot(BaseData boot, double hours)
         {
             if (!SdBoot.ContainsKey(boot.Name))
-                SdBoot.Add(boot.Name, new Boot() { Name = boot.Name });
+                SdBoot.Add(boot.Name, new BaseData() { Name = boot.Name });
             SdBoot.TryGetValue(boot.Name, out var bootObject);
             bootObject.Count++;
             bootObject.SetHours(hours);

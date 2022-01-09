@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace KnrmVaarRaport
 {
-    internal abstract class BaseData
+    internal class BaseData
     {
         internal string Name { get; set; }
         internal int Count { get; set; }
