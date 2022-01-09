@@ -79,6 +79,7 @@ namespace KnrmVaarRaport
                     var windkracht = inzet[86];
                     var windrichting = inzet[87];
                     var zicht = inzet[89];
+                    var oproepGedaanDoor = inzet[4];
                     var andereHulpverleners = SplitCsv.ToArray(inzet[37]);
                     var vaartuiggroep = inzet[82];
                     var oorzaken = inzet[63];
@@ -90,7 +91,7 @@ namespace KnrmVaarRaport
                     int.TryParse(inzet[28], out int aantaloverledenen);
                     var behoevenVan = inzet[32];
                     var boot = UpdateBoot(inzet[2], hours);
-                    var typeInzet = UpdateTypeInzet(inzet[1], hours, boot, weer, windkracht, andereHulpverleners, aantalGeredden, aantalDieren, aantalOpvarende, aantaloverledenen, behoevenVan, vaartuiggroep, oorzaken, positie, prio, windrichting, zicht);
+                    var typeInzet = UpdateTypeInzet(inzet[1], hours, boot, weer, windkracht, andereHulpverleners, aantalGeredden, aantalDieren, aantalOpvarende, aantaloverledenen, behoevenVan, vaartuiggroep, oorzaken, positie, prio, windrichting, zicht, oproepGedaanDoor);
 
                     if (isInzet)
                     {
@@ -117,7 +118,7 @@ namespace KnrmVaarRaport
             }
         }
 
-        private static TypeInzet UpdateTypeInzet(string typeInzet, double hours, BaseData boot, string weer, string windkracht, string[] andereHulpverleners, int aantalGeredden, int aantalDieren, int aantalOpvarende, int aantaloverledenen, string behoevenVan, string vaartuiggroep, string oorzaken, string positie, string prio, string windrichting, string zicht)
+        private static TypeInzet UpdateTypeInzet(string typeInzet, double hours, BaseData boot, string weer, string windkracht, string[] andereHulpverleners, int aantalGeredden, int aantalDieren, int aantalOpvarende, int aantaloverledenen, string behoevenVan, string vaartuiggroep, string oorzaken, string positie, string prio, string windrichting, string zicht, string oproepGedaanDoor)
         {
             if (!_sdInzet.ContainsKey(typeInzet))
                 _sdInzet.Add(typeInzet, new TypeInzet() { Name = typeInzet });
@@ -129,7 +130,7 @@ namespace KnrmVaarRaport
             _sdInzet.TryGetValue(typeInzet, out var inzetObject);
             inzetObject.Count++;
             inzetObject.SetHours(hours);
-            inzetObject.AddData(hours, boot, weer, windkracht, andereHulpverleners, aantalGeredden, aantalDieren, aantalOpvarende, aantaloverledenen, behoevenVan, vaartuiggroep, oorzaken, positie, prio, windrichting, zicht);
+            inzetObject.AddData(hours, boot, weer, windkracht, andereHulpverleners, aantalGeredden, aantalDieren, aantalOpvarende, aantaloverledenen, behoevenVan, vaartuiggroep, oorzaken, positie, prio, windrichting, zicht, oproepGedaanDoor);
             return inzetObject;
         }
 
@@ -232,6 +233,7 @@ namespace KnrmVaarRaport
                 row = AddTypesToDocument(typeInzet.Value.SdOorzaak, fs, "Oorzaak");
                 row = AddTypesToDocument(typeInzet.Value.SdPrio, fs, "Prio");
                 row = AddTypesToDocument(typeInzet.Value.SdZicht, fs, "Zicht");
+                row = AddTypesToDocument(typeInzet.Value.SdOproepGedaanDoor, fs, "Oproep gedaan door");
             }
         }
 
