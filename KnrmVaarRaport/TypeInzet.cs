@@ -23,12 +23,11 @@ namespace KnrmVaarRaport
         internal int AantalGeredden { get; private set; } = 0;
         internal int AantalDieren { get; private set; } = 0;
         internal int AantalOpvarende { get; private set; } = 0;
-        internal int Aantaloverledenen { get; private set; } = 0;
         internal TypeInzet() : base()
         {
             SdBoot = new SortedDictionary<string, BaseData>();
         }
-        internal void AddData(double hours, BaseData boot, string weer, string windkracht, string[] andereHulpverleners, int aantalGeredden, int aantalDieren, int aantalOpvarende, int aantaloverledenen, string behoevenVan, string vaartuiggroep, string oorzaken, string positie, string prio, string windrichting, string zicht, string oproepGedaanDoor)
+        internal void AddData(double hours, BaseData boot, string weer, string windkracht, string[] andereHulpverleners, int aantalGeredden, int aantalDieren, int aantalOpvarende, string behoevenVan, string vaartuiggroep, string oorzaken, string positie, string prio, string windrichting, string zicht, string oproepGedaanDoor)
         {
             UpdateData(SdBoot, boot.Name, hours);
             UpdateData(SdWeer, weer, hours);
@@ -46,7 +45,6 @@ namespace KnrmVaarRaport
             AantalGeredden += aantalGeredden;
             AantalDieren += aantalDieren;
             AantalOpvarende += aantalOpvarende;
-            Aantaloverledenen += aantaloverledenen;
         }
 
         private void UpdateData(SortedDictionary<string, BaseData> dataObjects, string data, double hours)

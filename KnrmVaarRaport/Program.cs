@@ -47,7 +47,7 @@ namespace KnrmVaarRaport
 
         private static void ReadFile()
         {
-            using var sr = new StreamReader(_path);//"VAAR2021.csv"
+            using var sr = new StreamReader(_path);//"Actierapporten.csv"
             int i = 0;
             int fieldCount = 0;
             string[] Titles;
@@ -66,37 +66,31 @@ namespace KnrmVaarRaport
                         continue;
                     }
                     var omschrijving = inzet[3];
-                    var isInzet = Regex.IsMatch(omschrijving, "^[0-9].*-");
-                    var hours = double.Parse(inzet[9].Replace(',', '.'));
-                    var schipper = inzet[10];
-                    var opstapper1 = inzet[11];
-                    var opstapper2 = inzet[12];
-                    var opstapper3 = inzet[13];
-                    var opstapper4 = inzet[14];
-                    var opstapper5 = inzet[15];
+                    var hours = CalculateHours(DateTime.Parse(inzet[7]), DateTime.Parse(inzet[10]));
+                    var schipper = inzet[38];
+                    var opstapper1 = inzet[39];
+                    var opstapper2 = inzet[40];
+                    var opstapper3 = inzet[41];
+                    var opstapper4 = inzet[42];
+                    var opstapper5 = inzet[43];
                     var datum = inzet[0];
-                    var weer = inzet[84];
-                    var windkracht = inzet[86];
-                    var windrichting = inzet[87];
-                    var zicht = inzet[89];
-                    var oproepGedaanDoor = inzet[4];
-                    var andereHulpverleners = SplitCsv.ToArray(inzet[37]);
-                    var vaartuiggroep = inzet[82];
-                    var oorzaken = inzet[63];
-                    var positie = inzet[65];
-                    var prio = inzet[67];
-                    int.TryParse(inzet[24], out int aantalGeredden);
-                    int.TryParse(inzet[23], out int aantalDieren);
-                    int.TryParse(inzet[27], out int aantalOpvarende);
-                    int.TryParse(inzet[28], out int aantaloverledenen);
+                    var weer = inzet[37];
+                    var windkracht = inzet[15];
+                    var windrichting = inzet[14];
+                    var zicht = inzet[16];
+                    var oproepGedaanDoor = inzet[6];
+                    var andereHulpverleners = SplitCsv.ToArray(inzet[11]);
+                    var vaartuiggroep = inzet[32];
+                    var oorzaken = inzet[24];
+                    var positie = inzet[17];
+                    var prio = inzet[33];
+                    int.TryParse(inzet[20], out int aantalGeredden);
+                    int.TryParse(inzet[21], out int aantalDieren);
+                    int.TryParse(inzet[19], out int aantalOpvarende);
                     var behoevenVan = inzet[32];
-                    var boot = UpdateBoot(inzet[2], hours);
-                    var typeInzet = UpdateTypeInzet(inzet[1], hours, boot, weer, windkracht, andereHulpverleners, aantalGeredden, aantalDieren, aantalOpvarende, aantaloverledenen, behoevenVan, vaartuiggroep, oorzaken, positie, prio, windrichting, zicht, oproepGedaanDoor);
+                    var boot = UpdateBoot(inzet[5], hours);
+                    var typeInzet = UpdateTypeInzet(inzet[2], hours, boot, weer, windkracht, andereHulpverleners, aantalGeredden, aantalDieren, aantalOpvarende, behoevenVan, vaartuiggroep, oorzaken, positie, prio, windrichting, zicht, oproepGedaanDoor);
 
-                    if (isInzet)
-                    {
-                        Console.WriteLine($"{typeInzet.Name} {omschrijving}");
-                    }
                     UpdateKnrmHelper(schipper, hours, typeInzet, boot);
                     if (string.Compare(schipper, opstapper1) != 0)
                         UpdateKnrmHelper(opstapper1, hours, typeInzet, boot);
@@ -118,7 +112,14 @@ namespace KnrmVaarRaport
             }
         }
 
-        private static TypeInzet UpdateTypeInzet(string typeInzet, double hours, BaseData boot, string weer, string windkracht, string[] andereHulpverleners, int aantalGeredden, int aantalDieren, int aantalOpvarende, int aantaloverledenen, string behoevenVan, string vaartuiggroep, string oorzaken, string positie, string prio, string windrichting, string zicht, string oproepGedaanDoor)
+        private static double CalculateHours(DateTime oproep, DateTime terug)
+        {
+            var vaarTijd = terug.Subtract(oproep);
+            double hours = vaarTijd.TotalHours + (vaarTijd.Minutes / 60);
+            return hours;
+        }
+
+        private static TypeInzet UpdateTypeInzet(string typeInzet, double hours, BaseData boot, string weer, string windkracht, string[] andereHulpverleners, int aantalGeredden, int aantalDieren, int aantalOpvarende, string behoevenVan, string vaartuiggroep, string oorzaken, string positie, string prio, string windrichting, string zicht, string oproepGedaanDoor)
         {
             if (!_sdInzet.ContainsKey(typeInzet))
                 _sdInzet.Add(typeInzet, new TypeInzet() { Name = typeInzet });
@@ -130,7 +131,7 @@ namespace KnrmVaarRaport
             _sdInzet.TryGetValue(typeInzet, out var inzetObject);
             inzetObject.Count++;
             inzetObject.SetHours(hours);
-            inzetObject.AddData(hours, boot, weer, windkracht, andereHulpverleners, aantalGeredden, aantalDieren, aantalOpvarende, aantaloverledenen, behoevenVan, vaartuiggroep, oorzaken, positie, prio, windrichting, zicht, oproepGedaanDoor);
+            inzetObject.AddData(hours, boot, weer, windkracht, andereHulpverleners, aantalGeredden, aantalDieren, aantalOpvarende, behoevenVan, vaartuiggroep, oorzaken, positie, prio, windrichting, zicht, oproepGedaanDoor);
             return inzetObject;
         }
 
@@ -220,7 +221,7 @@ namespace KnrmVaarRaport
                 using FileStream fs = File.Create($"{name}-{timeTicks}.csv");
                 byte[] row = new UTF8Encoding(true).GetBytes(string.Format("{0}\r\n", name));
                 fs.Write(row, 0, row.Length);
-                row = new UTF8Encoding(true).GetBytes(string.Format("uren;{0};Geredde dieren;{1};Geredde personen;{2};Opvarende;{3};Overledenen;{4};\r\n", typeInzet.Value.Hours, typeInzet.Value.AantalDieren, typeInzet.Value.AantalGeredden, typeInzet.Value.AantalOpvarende, typeInzet.Value.Aantaloverledenen));
+                row = new UTF8Encoding(true).GetBytes(string.Format("uren;{0};Geredde dieren;{1};Geredde personen;{2};Opvarende;{3};\r\n", typeInzet.Value.Hours, typeInzet.Value.AantalDieren, typeInzet.Value.AantalGeredden, typeInzet.Value.AantalOpvarende));
                 fs.Write(row, 0, row.Length);
                 row = AddTypesToDocument(typeInzet.Value.SdBoot, fs, "boot");
                 row = AddTypesToDocument(typeInzet.Value.SdWeer, fs, "weer");
