@@ -13,26 +13,15 @@ namespace KnrmVaarRaport
         private static readonly SortedDictionary<string, BaseData> _sdBoot = new();
         public static void Main(string[] args)
         {
-            if (ReadArgs(args) && !string.IsNullOrEmpty(_path))
-            {
-                Work();
-            }
-        }
-
-        private static bool ReadArgs(string[] args)
-        {
-            if (args.Length == 0 || args[0] == null)
-                return false;
-            _path = args[0];
-            return true;
+            Work();
         }
 
         private static void Work()
         {
             try
             {
-                if (_path == null) return;
-                ReadFile();
+                ReadFileActierapporten();
+                ReadFileOverig();
                 //AskToContinue();
                 var timeTicks = DateTime.Now.Ticks;
                 WriteResultFile(timeTicks);
@@ -45,9 +34,9 @@ namespace KnrmVaarRaport
             }
         }
 
-        private static void ReadFile()
+        private static void ReadFileActierapporten()
         {
-            using var sr = new StreamReader(_path);//"Actierapporten.csv"
+            using var sr = new StreamReader("Actierapporten.csv");
             int i = 0;
             int fieldCount = 0;
             string[] Titles;
@@ -90,6 +79,64 @@ namespace KnrmVaarRaport
                     var behoevenVan = inzet[32];
                     var boot = UpdateBoot(inzet[5], hours);
                     var typeInzet = UpdateTypeInzet(inzet[2], hours, boot, weer, windkracht, andereHulpverleners, aantalGeredden, aantalDieren, aantalOpvarende, behoevenVan, vaartuiggroep, oorzaken, positie, prio, windrichting, zicht, oproepGedaanDoor);
+
+                    UpdateKnrmHelper(schipper, hours, typeInzet, boot);
+                    if (string.Compare(schipper, opstapper1) != 0)
+                        UpdateKnrmHelper(opstapper1, hours, typeInzet, boot);
+                    if (!(schipper + opstapper1).Contains(opstapper2, StringComparison.CurrentCulture))
+                        UpdateKnrmHelper(opstapper2, hours, typeInzet, boot);
+                    if (!(schipper + opstapper1 + opstapper2).Contains(opstapper3, StringComparison.CurrentCulture))
+                        UpdateKnrmHelper(opstapper3, hours, typeInzet, boot);
+                    if (!(schipper + opstapper1 + opstapper2 + opstapper3).Contains(opstapper4, StringComparison.CurrentCulture))
+                        UpdateKnrmHelper(opstapper4, hours, typeInzet, boot);
+                    if (!(schipper + opstapper1 + opstapper2 + opstapper3 + opstapper4).Contains(opstapper5, StringComparison.CurrentCulture))
+                        UpdateKnrmHelper(opstapper5, hours, typeInzet, boot);
+                }
+                else
+                {
+                    fieldCount = inzet.Count();
+                    Titles = inzet;
+                }
+                i++;
+            }
+        }
+
+        private static void ReadFileOverig()
+        {
+            using var sr = new StreamReader("Overige rapporten.csv");
+            int i = 0;
+            int fieldCount = 0;
+            string[] Titles;
+            while (true)
+            {
+                var line = sr.ReadLine();
+                if (line == null) break;
+                var inzet = SplitCsv.Split(line, sr);
+                if (i != 0)
+                {
+                    if (fieldCount != inzet.Count())
+                    {
+#if DEBUG
+                        Debugger.Break();
+#endif
+                        continue;
+                    }
+                    var omschrijving = inzet[3];
+                    var hours = CalculateHours(DateTime.Parse(inzet[4]), DateTime.Parse(inzet[5]));
+                    var schipper = inzet[21];
+                    var opstapper1 = inzet[22];
+                    var opstapper2 = inzet[23];
+                    var opstapper3 = inzet[24];
+                    var opstapper4 = inzet[25];
+                    var opstapper5 = inzet[26];
+                    var datum = inzet[0];
+                    var weer = inzet[9];
+                    var windkracht = inzet[8];
+                    var windrichting = inzet[7];
+                    var zicht = inzet[10];
+                    var andereHulpverleners = SplitCsv.ToArray(inzet[6]);
+                    var boot = UpdateBoot(inzet[3], hours);
+                    var typeInzet = UpdateTypeInzet(inzet[1], hours, boot, weer, windkracht, andereHulpverleners, 0, 0, 0, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, windrichting, zicht, string.Empty);
 
                     UpdateKnrmHelper(schipper, hours, typeInzet, boot);
                     if (string.Compare(schipper, opstapper1) != 0)
@@ -194,18 +241,18 @@ namespace KnrmVaarRaport
 
         private static byte[] GetRowHeld(KnrmHeld held)
         {
-            var rowHeld = string.Format("{0};{1};{2};{3};", held.Name, held.Count, held.Hours.ToString("F1", CultureInfo.InvariantCulture).Replace('.', ','), held.HoursUp);
+            var rowHeld = string.Format("{0};{1};{2};{3};", held.Name, held.Count, held.Hours.ToString("F1", CultureInfo.InvariantCulture), held.HoursUp);
             foreach (var inzet in _sdInzet.Values)
             {
                 if (held.SdInzet.TryGetValue(inzet.Name, out var inzetHeld))
-                    rowHeld += string.Format("{0};{1};{2};", inzetHeld.Count, inzetHeld.Hours.ToString("F1", CultureInfo.InvariantCulture).Replace('.', ','), inzetHeld.HoursUp);
+                    rowHeld += string.Format("{0};{1};{2};", inzetHeld.Count, inzetHeld.Hours.ToString("F1", CultureInfo.InvariantCulture), inzetHeld.HoursUp);
                 else
                     rowHeld += "0;0;0;";
             }
             foreach (var inzet in _sdBoot.Values)
             {
                 if (held.SdBoot.TryGetValue(inzet.Name, out var bootHeld))
-                    rowHeld += string.Format("{0};{1};{2};", bootHeld.Count, bootHeld.Hours.ToString("F1", CultureInfo.InvariantCulture).Replace('.', ','), bootHeld.HoursUp);
+                    rowHeld += string.Format("{0};{1};{2};", bootHeld.Count, bootHeld.Hours.ToString("F1", CultureInfo.InvariantCulture), bootHeld.HoursUp);
                 else
                     rowHeld += "0;0;0;";
             }
@@ -214,7 +261,7 @@ namespace KnrmVaarRaport
 
         private static void WriteInzetToFile(long timeTicks)
         {
-            foreach(var typeInzet in _sdInzet)
+            foreach (var typeInzet in _sdInzet)
             {
                 var name = typeInzet.Value.Name;
                 foreach (var c in Path.GetInvalidFileNameChars()) { name.Replace(c, '-'); }
