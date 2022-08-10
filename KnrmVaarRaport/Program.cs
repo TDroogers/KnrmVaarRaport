@@ -264,7 +264,7 @@ namespace KnrmVaarRaport
             foreach (var typeInzet in _sdInzet)
             {
                 var name = typeInzet.Value.Name;
-                foreach (var c in Path.GetInvalidFileNameChars()) { name.Replace(c, '-'); }
+                foreach (var c in Path.GetInvalidFileNameChars()) { name = name.Replace(c, '-'); }
                 using FileStream fs = File.Create($"{name}-{timeTicks}.csv");
                 byte[] row = new UTF8Encoding(true).GetBytes(string.Format("{0}\r\n", name));
                 fs.Write(row, 0, row.Length);
