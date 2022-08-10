@@ -55,30 +55,30 @@ namespace KnrmVaarRaport
                         continue;
                     }
                     var omschrijving = inzet[3];
-                    var hours = CalculateHours(DateTime.Parse(inzet[7]), DateTime.Parse(inzet[10]));
-                    var schipper = inzet[38];
+                    var hours = CalculateHours(DateTime.Parse(inzet[8]), DateTime.Parse(inzet[11]));
+                    var schipper = inzet[2];
                     var opstapper1 = inzet[39];
                     var opstapper2 = inzet[40];
                     var opstapper3 = inzet[41];
                     var opstapper4 = inzet[42];
                     var opstapper5 = inzet[43];
                     var datum = inzet[0];
-                    var weer = inzet[37];
-                    var windkracht = inzet[15];
-                    var windrichting = inzet[14];
-                    var zicht = inzet[16];
-                    var oproepGedaanDoor = inzet[6];
-                    var andereHulpverleners = SplitCsv.ToArray(inzet[11]);
-                    var vaartuiggroep = inzet[32];
-                    var oorzaken = inzet[24];
-                    var positie = inzet[17];
-                    var prio = inzet[33];
-                    int.TryParse(inzet[20], out int aantalGeredden);
-                    int.TryParse(inzet[21], out int aantalDieren);
-                    int.TryParse(inzet[19], out int aantalOpvarende);
-                    var behoevenVan = inzet[32];
-                    var boot = UpdateBoot(inzet[5], hours);
-                    var typeInzet = UpdateTypeInzet(inzet[2], hours, boot, weer, windkracht, andereHulpverleners, aantalGeredden, aantalDieren, aantalOpvarende, behoevenVan, vaartuiggroep, oorzaken, positie, prio, windrichting, zicht, oproepGedaanDoor);
+                    var weer = inzet[38];
+                    var windkracht = inzet[16];
+                    var windrichting = inzet[15];
+                    var zicht = inzet[17];
+                    var oproepGedaanDoor = inzet[7];
+                    var andereHulpverleners = SplitCsv.ToArray(inzet[12]);
+                    var vaartuiggroep = inzet[33];
+                    var oorzaken = inzet[25];
+                    var positie = inzet[18];
+                    var prio = inzet[34];
+                    int.TryParse(inzet[21], out int aantalGeredden);
+                    int.TryParse(inzet[22], out int aantalDieren);
+                    int.TryParse(inzet[20], out int aantalOpvarende);
+                    var behoevenVan = inzet[33];
+                    var boot = UpdateBoot(inzet[6], hours);
+                    var typeInzet = UpdateTypeInzet(inzet[3], hours, boot, weer, windkracht, andereHulpverleners, aantalGeredden, aantalDieren, aantalOpvarende, behoevenVan, vaartuiggroep, oorzaken, positie, prio, windrichting, zicht, oproepGedaanDoor);
 
                     UpdateKnrmHelper(schipper, hours, typeInzet, boot);
                     if (string.Compare(schipper, opstapper1) != 0)
@@ -121,7 +121,7 @@ namespace KnrmVaarRaport
 #endif
                         continue;
                     }
-                    var omschrijving = inzet[3];
+                    var omschrijving = inzet[2];
                     var hours = CalculateHours(DateTime.Parse(inzet[4]), DateTime.Parse(inzet[5]));
                     var schipper = inzet[21];
                     var opstapper1 = inzet[22];
@@ -194,7 +194,7 @@ namespace KnrmVaarRaport
 
         private static void UpdateKnrmHelper(string redder, double hours, TypeInzet typeInzet, BaseData boot)
         {
-            if (string.IsNullOrWhiteSpace(redder) || string.Compare(redder, "n.v.t.", true) == 0 || int.TryParse(redder, out int ignore))
+            if (string.IsNullOrWhiteSpace(redder) || string.Compare(redder, "n.v.t.", true) == 0 || string.Compare(redder, "nee", true) == 0 || int.TryParse(redder, out int ignore))
                 return;
             if (!_sdHelden.ContainsKey(redder))
                 _sdHelden.Add(redder, new KnrmHeld() { Name = redder });
@@ -215,7 +215,7 @@ namespace KnrmVaarRaport
 
         private static void WriteResultFile(long timeTicks)
         {
-            using FileStream fs = File.Create("result" + timeTicks + ".csv");
+            using FileStream fs = File.Create("result-" + timeTicks + ".csv");
             byte[] row = GetRowTitle();
             fs.Write(row, 0, row.Length);
             foreach (var held in _sdHelden.Values)
