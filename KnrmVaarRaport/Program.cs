@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace KnrmVaarRaport
 {
-    public class Program
+    public static class Program
     {
         private static string _path = string.Empty;
         private static readonly SortedDictionary<string, KnrmHeld> _sdHelden = new();
@@ -79,18 +79,7 @@ namespace KnrmVaarRaport
                     var behoevenVan = inzet[33];
                     var boot = UpdateBoot(inzet[6], hours);
                     var typeInzet = UpdateTypeInzet(inzet[3], hours, boot, weer, windkracht, andereHulpverleners, aantalGeredden, aantalDieren, aantalOpvarende, behoevenVan, vaartuiggroep, oorzaken, positie, prio, windrichting, zicht, oproepGedaanDoor);
-
-                    UpdateKnrmHelper(schipper, hours, typeInzet, boot);
-                    if (string.Compare(schipper, opstapper1) != 0)
-                        UpdateKnrmHelper(opstapper1, hours, typeInzet, boot);
-                    if (!(schipper + opstapper1).Contains(opstapper2, StringComparison.CurrentCulture))
-                        UpdateKnrmHelper(opstapper2, hours, typeInzet, boot);
-                    if (!(schipper + opstapper1 + opstapper2).Contains(opstapper3, StringComparison.CurrentCulture))
-                        UpdateKnrmHelper(opstapper3, hours, typeInzet, boot);
-                    if (!(schipper + opstapper1 + opstapper2 + opstapper3).Contains(opstapper4, StringComparison.CurrentCulture))
-                        UpdateKnrmHelper(opstapper4, hours, typeInzet, boot);
-                    if (!(schipper + opstapper1 + opstapper2 + opstapper3 + opstapper4).Contains(opstapper5, StringComparison.CurrentCulture))
-                        UpdateKnrmHelper(opstapper5, hours, typeInzet, boot);
+                    UpdateHelpers(hours, schipper, opstapper1, opstapper2, opstapper3, opstapper4, opstapper5, boot, typeInzet);
                 }
                 else
                 {
@@ -138,17 +127,7 @@ namespace KnrmVaarRaport
                     var boot = UpdateBoot(inzet[3], hours);
                     var typeInzet = UpdateTypeInzet(inzet[1], hours, boot, weer, windkracht, andereHulpverleners, 0, 0, 0, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, windrichting, zicht, string.Empty);
 
-                    UpdateKnrmHelper(schipper, hours, typeInzet, boot);
-                    if (string.Compare(schipper, opstapper1) != 0)
-                        UpdateKnrmHelper(opstapper1, hours, typeInzet, boot);
-                    if (!(schipper + opstapper1).Contains(opstapper2, StringComparison.CurrentCulture))
-                        UpdateKnrmHelper(opstapper2, hours, typeInzet, boot);
-                    if (!(schipper + opstapper1 + opstapper2).Contains(opstapper3, StringComparison.CurrentCulture))
-                        UpdateKnrmHelper(opstapper3, hours, typeInzet, boot);
-                    if (!(schipper + opstapper1 + opstapper2 + opstapper3).Contains(opstapper4, StringComparison.CurrentCulture))
-                        UpdateKnrmHelper(opstapper4, hours, typeInzet, boot);
-                    if (!(schipper + opstapper1 + opstapper2 + opstapper3 + opstapper4).Contains(opstapper5, StringComparison.CurrentCulture))
-                        UpdateKnrmHelper(opstapper5, hours, typeInzet, boot);
+                    UpdateHelpers(hours, schipper, opstapper1, opstapper2, opstapper3, opstapper4, opstapper5, boot, typeInzet);
                 }
                 else
                 {
@@ -157,6 +136,21 @@ namespace KnrmVaarRaport
                 }
                 i++;
             }
+        }
+
+        private static void UpdateHelpers(double hours, string schipper, string opstapper1, string opstapper2, string opstapper3, string opstapper4, string opstapper5, BaseData boot, TypeInzet typeInzet)
+        {
+            UpdateKnrmHelper(schipper, hours, typeInzet, boot);
+            if (string.Compare(schipper, opstapper1) != 0)
+                UpdateKnrmHelper(opstapper1, hours, typeInzet, boot);
+            if (!(schipper + opstapper1).Contains(opstapper2, StringComparison.CurrentCulture))
+                UpdateKnrmHelper(opstapper2, hours, typeInzet, boot);
+            if (!(schipper + opstapper1 + opstapper2).Contains(opstapper3, StringComparison.CurrentCulture))
+                UpdateKnrmHelper(opstapper3, hours, typeInzet, boot);
+            if (!(schipper + opstapper1 + opstapper2 + opstapper3).Contains(opstapper4, StringComparison.CurrentCulture))
+                UpdateKnrmHelper(opstapper4, hours, typeInzet, boot);
+            if (!(schipper + opstapper1 + opstapper2 + opstapper3 + opstapper4).Contains(opstapper5, StringComparison.CurrentCulture))
+                UpdateKnrmHelper(opstapper5, hours, typeInzet, boot);
         }
 
         private static double CalculateHours(DateTime oproep, DateTime terug)
