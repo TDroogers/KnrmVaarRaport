@@ -11,6 +11,7 @@ namespace KnrmVaarRaport
         private static readonly SortedDictionary<string, KnrmHeld> _sdHelden = new();
         private static readonly SortedDictionary<string, TypeInzet> _sdInzet = new();
         private static readonly SortedDictionary<string, BaseData> _sdBoot = new();
+        private static readonly List<string> _typeInzetToIgnore = new() { "Boot uitgemeld" };
         public static void Main(string[] args)
         {
             Work();
@@ -55,7 +56,9 @@ namespace KnrmVaarRaport
                         continue;
                     }
                     var omschrijving = inzet[3];
-                    var hours = CalculateHours(DateTime.Parse(inzet[8]), DateTime.Parse(inzet[11]));
+                    if (_typeInzetToIgnore.Contains(omschrijving))
+                        continue;
+                    var hours = CalculateHours(DateTime.Parse(inzet[9]), DateTime.Parse(inzet[11]));
                     var schipper = inzet[2];
                     var opstapper1 = inzet[39];
                     var opstapper2 = inzet[40];
@@ -110,7 +113,9 @@ namespace KnrmVaarRaport
 #endif
                         continue;
                     }
-                    var omschrijving = inzet[2];
+                    var omschrijving = inzet[1];
+                    if (_typeInzetToIgnore.Contains(omschrijving))
+                        continue;
                     var hours = CalculateHours(DateTime.Parse(inzet[4]), DateTime.Parse(inzet[5]));
                     var schipper = inzet[21];
                     var opstapper1 = inzet[22];
