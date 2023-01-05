@@ -55,33 +55,33 @@ namespace KnrmVaarRaport
 #endif
                         continue;
                     }
-                    var omschrijving = inzet[3];
+                    var omschrijving = inzet[4];
                     if (_typeInzetToIgnore.Contains(omschrijving))
                         continue;
-                    var hours = CalculateHours(DateTime.Parse(inzet[9]), DateTime.Parse(inzet[11]));
-                    var schipper = inzet[2];
-                    var opstapper1 = inzet[39];
-                    var opstapper2 = inzet[40];
-                    var opstapper3 = inzet[41];
-                    var opstapper4 = inzet[42];
-                    var opstapper5 = inzet[43];
+                    var hours = CalculateHours(DateTime.Parse(inzet[10]), DateTime.Parse(inzet[12]));
+                    var schipper = inzet[3];
+                    var opstapper1 = inzet[40];
+                    var opstapper2 = inzet[41];
+                    var opstapper3 = inzet[42];
+                    var opstapper4 = inzet[43];
+                    var opstapper5 = inzet[44];
                     var datum = inzet[0];
-                    var weer = inzet[38];
-                    var windkracht = inzet[16];
-                    var windrichting = inzet[15];
-                    var zicht = inzet[17];
-                    var oproepGedaanDoor = inzet[7];
-                    var andereHulpverleners = SplitCsv.ToArray(inzet[12]);
-                    var vaartuiggroep = inzet[33];
-                    var oorzaken = inzet[25];
-                    var positie = inzet[18];
-                    var prio = inzet[34];
-                    int.TryParse(inzet[21], out int aantalGeredden);
-                    int.TryParse(inzet[22], out int aantalDieren);
-                    int.TryParse(inzet[20], out int aantalOpvarende);
-                    var behoevenVan = inzet[33];
-                    var boot = UpdateBoot(inzet[6], hours);
-                    var typeInzet = UpdateTypeInzet(inzet[3], hours, boot, weer, windkracht, andereHulpverleners, aantalGeredden, aantalDieren, aantalOpvarende, behoevenVan, vaartuiggroep, oorzaken, positie, prio, windrichting, zicht, oproepGedaanDoor);
+                    var weer = inzet[39];
+                    var windkracht = inzet[17];
+                    var windrichting = inzet[16];
+                    var zicht = inzet[18];
+                    var oproepGedaanDoor = inzet[8];
+                    var andereHulpverleners = SplitCsv.ToArray(inzet[13]);
+                    var vaartuiggroep = inzet[34];
+                    var oorzaken = inzet[26];
+                    var positie = inzet[19];
+                    var prio = inzet[35];
+                    int.TryParse(inzet[22], out int aantalGeredden);
+                    int.TryParse(inzet[23], out int aantalDieren);
+                    int.TryParse(inzet[21], out int aantalOpvarende);
+                    var behoevenVan = inzet[34];
+                    var boot = UpdateBoot(inzet[7], hours);
+                    var typeInzet = UpdateTypeInzet(omschrijving, hours, boot, weer, windkracht, andereHulpverleners, aantalGeredden, aantalDieren, aantalOpvarende, behoevenVan, vaartuiggroep, oorzaken, positie, prio, windrichting, zicht, oproepGedaanDoor);
                     UpdateHelpers(hours, schipper, opstapper1, opstapper2, opstapper3, opstapper4, opstapper5, boot, typeInzet);
                 }
                 else
