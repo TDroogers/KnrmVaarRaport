@@ -7,6 +7,7 @@ namespace KnrmVaarRaport
 {
     public static class Program
     {
+        private static int _year = 2023;
         private static string _path = string.Empty;
         private static readonly SortedDictionary<string, KnrmHeld> _sdHelden = new();
         private static readonly SortedDictionary<string, TypeInzet> _sdInzet = new();
@@ -55,6 +56,9 @@ namespace KnrmVaarRaport
 #endif
                         continue;
                     }
+                    var datum = DateTime.Parse(inzet[0]);
+                    if (!datum.Year.Equals(_year))
+                        continue;
                     var omschrijving = inzet[4];
                     if (_typeInzetToIgnore.Contains(omschrijving))
                         continue;
@@ -65,7 +69,6 @@ namespace KnrmVaarRaport
                     var opstapper3 = inzet[42];
                     var opstapper4 = inzet[43];
                     var opstapper5 = inzet[44];
-                    var datum = inzet[0];
                     var weer = inzet[39];
                     var windkracht = inzet[17];
                     var windrichting = inzet[16];
@@ -114,6 +117,9 @@ namespace KnrmVaarRaport
 #endif
                         continue;
                     }
+                    var datum = DateTime.Parse(inzet[0]);
+                    if (!datum.Year.Equals(_year))
+                        continue;
                     var omschrijving = inzet[1];
                     if (_typeInzetToIgnore.Contains(omschrijving))
                         continue;
@@ -124,7 +130,6 @@ namespace KnrmVaarRaport
                     var opstapper3 = inzet[24];
                     var opstapper4 = inzet[25];
                     var opstapper5 = inzet[26];
-                    var datum = inzet[0];
                     var weer = inzet[9];
                     var windkracht = inzet[8];
                     var windrichting = inzet[7];
