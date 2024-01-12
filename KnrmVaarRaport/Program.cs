@@ -63,6 +63,12 @@ namespace KnrmVaarRaport
                     if (_typeInzetToIgnore.Contains(omschrijving))
                         continue;
                     var hours = CalculateHours(DateTime.Parse(inzet[10]), DateTime.Parse(inzet[12]));
+#if DEBUG
+                    if (hours > 5)
+                    {
+                        Debugger.Break();
+                    }
+#endif
                     var schipper = inzet[3];
                     var opstapper1 = inzet[40];
                     var opstapper2 = inzet[41];
@@ -124,6 +130,12 @@ namespace KnrmVaarRaport
                     if (_typeInzetToIgnore.Contains(omschrijving))
                         continue;
                     var hours = CalculateHours(DateTime.Parse(inzet[4]), DateTime.Parse(inzet[5]));
+#if DEBUG
+                    if (hours > 8)
+                    {
+                        Debugger.Break();
+                    }
+#endif
                     var schipper = inzet[21];
                     var opstapper1 = inzet[22];
                     var opstapper2 = inzet[23];
