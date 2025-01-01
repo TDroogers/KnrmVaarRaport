@@ -7,12 +7,13 @@ namespace KnrmVaarRaport
 {
     public static class Program
     {
-        private static int _year = 2023;
+        private static int _year = 2024;
         private static string _path = string.Empty;
         private static readonly SortedDictionary<string, KnrmHeld> _sdHelden = new();
         private static readonly SortedDictionary<string, TypeInzet> _sdInzet = new();
         private static readonly SortedDictionary<string, BaseData> _sdBoot = new();
         private static readonly List<string> _typeInzetToIgnore = new() { "Boot uitgemeld" };
+        private static readonly List<string> _trainingDifferentStart = ["HRB Evenement", "KNRM Evenement", "KNRM Onderhoud"];
         public static void Main(string[] args)
         {
             Work();
@@ -24,7 +25,7 @@ namespace KnrmVaarRaport
             {
                 ReadFileActierapporten();
                 ReadFileOverig();
-                //AskToContinue();
+                AskToContinue();
                 var timeTicks = DateTime.Now.Ticks;
                 WriteResultFile(timeTicks);
                 WriteInzetToFile(timeTicks);
@@ -41,13 +42,13 @@ namespace KnrmVaarRaport
             using var sr = new StreamReader("Actierapporten.csv");
             int i = 0;
             int fieldCount = 0;
-            string[] Titles;
+            string[]? titles = null;
             while (true)
             {
                 var line = sr.ReadLine();
                 if (line == null) break;
                 var inzet = SplitCsv.Split(line, sr);
-                if (i != 0)
+                if (i != 0 && titles is not null)
                 {
                     if (fieldCount != inzet.Count())
                     {
@@ -56,51 +57,57 @@ namespace KnrmVaarRaport
 #endif
                         continue;
                     }
-                    var datum = DateTime.Parse(inzet[0]);
+                    var datum = DateTime.Parse(inzet[GetIndex(titles, "Datum")]);
                     if (!datum.Year.Equals(_year))
                         continue;
-                    var omschrijving = inzet[4];
+                    var omschrijving = inzet[GetIndex(titles, "Soort")];
                     if (_typeInzetToIgnore.Contains(omschrijving))
                         continue;
-                    var hours = CalculateHours(DateTime.Parse(inzet[10]), DateTime.Parse(inzet[12]));
+                    var hours = CalculateHours(DateTime.Parse(inzet[GetIndex(titles, "Afvaart")]), DateTime.Parse(inzet[GetIndex(titles, "Afgemeerd")]));
 #if DEBUG
                     if (hours > 5)
                     {
                         Debugger.Break();
                     }
 #endif
-                    var schipper = inzet[3];
-                    var opstapper1 = inzet[40];
-                    var opstapper2 = inzet[41];
-                    var opstapper3 = inzet[42];
-                    var opstapper4 = inzet[43];
-                    var opstapper5 = inzet[44];
-                    var weer = inzet[39];
-                    var windkracht = inzet[17];
-                    var windrichting = inzet[16];
-                    var zicht = inzet[18];
-                    var oproepGedaanDoor = inzet[8];
-                    var andereHulpverleners = SplitCsv.ToArray(inzet[13]);
-                    var vaartuiggroep = inzet[34];
-                    var oorzaken = inzet[26];
-                    var positie = inzet[19];
-                    var prio = inzet[35];
-                    var fonteinkruid = inzet[33];
-                    int.TryParse(inzet[22], out int aantalGeredden);
-                    int.TryParse(inzet[23], out int aantalDieren);
-                    int.TryParse(inzet[21], out int aantalOpvarende);
-                    var behoevenVan = inzet[34];
-                    var boot = UpdateBoot(inzet[7], hours);
+                    var schipper = inzet[GetIndex(titles,"Schipper")];
+                    var opstapper1 = inzet[GetIndex(titles, "Opstapper 1")];
+                    var opstapper2 = inzet[GetIndex(titles, "Opstapper 2")];
+                    var opstapper3 = inzet[GetIndex(titles, "Opstapper 3")];
+                    var opstapper4 = inzet[GetIndex(titles, "Opstapper 4")];
+                    var opstapper5 = inzet[GetIndex(titles, "Opstapper 5")];
+                    var weer = inzet[GetIndex(titles, "Weersgesteldheid")];
+                    var windkracht = inzet[GetIndex(titles, "Windkracht (Beaufort)")];
+                    var windrichting = inzet[GetIndex(titles, "Windrichting")];
+                    var zicht = inzet[GetIndex(titles, "Zicht")];
+                    var oproepGedaanDoor = inzet[GetIndex(titles, "Oproep gedaan door")];
+                    var andereHulpverleners = SplitCsv.ToArray(inzet[GetIndex(titles, "Andere hulpverleners")]);
+                    var vaartuiggroep = inzet[GetIndex(titles, "Ten behoeve van")];
+                    var oorzaken = inzet[GetIndex(titles, "Oorzaken")];
+                    var positie = inzet[GetIndex(titles, "Gebied")];
+                    var prio = inzet[GetIndex(titles, "Priotiteit Alarmering")];
+                    var fonteinkruid = inzet[GetIndex(titles, "Problemen met fonteinkruid?")];
+                    int.TryParse(inzet[GetIndex(titles, "Aantal geredden")], out int aantalGeredden);
+                    int.TryParse(inzet[GetIndex(titles, "Aantal dieren")], out int aantalDieren);
+                    int.TryParse(inzet[GetIndex(titles, "Aantal Betrokkenen")], out int aantalOpvarende);
+                    var behoevenVan = inzet[GetIndex(titles, "Ten behoeve van")];
+                    var boot = UpdateBoot(inzet[GetIndex(titles, "Boot")], hours);
                     var typeInzet = UpdateTypeInzet(omschrijving, hours, boot, weer, windkracht, andereHulpverleners, aantalGeredden, aantalDieren, aantalOpvarende, behoevenVan, vaartuiggroep, oorzaken, positie, prio, windrichting, zicht, oproepGedaanDoor, fonteinkruid);
                     UpdateHelpers(hours, schipper, opstapper1, opstapper2, opstapper3, opstapper4, opstapper5, boot, typeInzet);
                 }
                 else
                 {
                     fieldCount = inzet.Count();
-                    Titles = inzet;
+                    titles = inzet;
                 }
                 i++;
             }
+        }
+
+        private static int GetIndex(string[] titles, string key)
+        {
+            var index = Array.FindIndex(titles, row => row == key);
+            return index;
         }
 
         private static void ReadFileOverig()
@@ -108,13 +115,13 @@ namespace KnrmVaarRaport
             using var sr = new StreamReader("Overige rapporten.csv");
             int i = 0;
             int fieldCount = 0;
-            string[] Titles;
+            string[]? titles = null;
             while (true)
             {
                 var line = sr.ReadLine();
                 if (line == null) break;
                 var inzet = SplitCsv.Split(line, sr);
-                if (i != 0)
+                if (i != 0 && titles is not null)
                 {
                     if (fieldCount != inzet.Count())
                     {
@@ -123,40 +130,41 @@ namespace KnrmVaarRaport
 #endif
                         continue;
                     }
-                    var datum = DateTime.Parse(inzet[0]);
+                    var datum = DateTime.Parse(inzet[GetIndex(titles, "Datum")]);
                     if (!datum.Year.Equals(_year))
                         continue;
-                    var omschrijving = inzet[1];
+                    var omschrijving = inzet[GetIndex(titles, "Soort")];
                     if (_typeInzetToIgnore.Contains(omschrijving))
                         continue;
-                    var hours = CalculateHours(DateTime.Parse(inzet[4]), DateTime.Parse(inzet[5]));
+                    var differentStart = _trainingDifferentStart.Contains(omschrijving);
+                    var hours = CalculateHours(DateTime.Parse(inzet[differentStart ? GetIndex(titles, "Afvaart") : GetIndex(titles,  "Aanvang opleiden & oefenen")]), DateTime.Parse(inzet[GetIndex(titles, "Afgemeerd")]));
 #if DEBUG
                     if (hours > 8)
                     {
                         Debugger.Break();
                     }
 #endif
-                    var schipper = inzet[21];
-                    var opstapper1 = inzet[22];
-                    var opstapper2 = inzet[23];
-                    var opstapper3 = inzet[24];
-                    var opstapper4 = inzet[25];
-                    var opstapper5 = inzet[26];
-                    var weer = inzet[9];
-                    var windkracht = inzet[8];
-                    var windrichting = inzet[7];
-                    var zicht = inzet[10];
-                    var fonteinkruid = inzet[20];
-                    var andereHulpverleners = SplitCsv.ToArray(inzet[6]);
-                    var boot = UpdateBoot(inzet[3], hours);
-                    var typeInzet = UpdateTypeInzet(inzet[1], hours, boot, weer, windkracht, andereHulpverleners, 0, 0, 0, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, windrichting, zicht, string.Empty, fonteinkruid);
+                    var schipper = inzet[GetIndex(titles, "Schipper")];
+                    var opstapper1 = inzet[GetIndex(titles, "Opstapper 1")];
+                    var opstapper2 = inzet[GetIndex(titles, "Opstapper 2")];
+                    var opstapper3 = inzet[GetIndex(titles, "Opstapper 3")];
+                    var opstapper4 = inzet[GetIndex(titles, "Opstapper 4")];
+                    var opstapper5 = inzet[GetIndex(titles, "Opstapper 5")];
+                    var weer = inzet[GetIndex(titles, "Weersomstandigheden")];
+                    var windkracht = inzet[GetIndex(titles, "Windkracht (Beaufort)")];
+                    var windrichting = inzet[GetIndex(titles, "Windrichting")];
+                    var zicht = inzet[GetIndex(titles, "Zicht")];
+                    var fonteinkruid = inzet[GetIndex(titles, "Problemen met fonteinkruid?")];
+                    var andereHulpverleners = SplitCsv.ToArray(inzet[GetIndex(titles, "Andere partners")]);
+                    var boot = UpdateBoot(inzet[GetIndex(titles, "Boot")], hours);
+                    var typeInzet = UpdateTypeInzet(omschrijving, hours, boot, weer, windkracht, andereHulpverleners, 0, 0, 0, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, windrichting, zicht, string.Empty, fonteinkruid);
 
                     UpdateHelpers(hours, schipper, opstapper1, opstapper2, opstapper3, opstapper4, opstapper5, boot, typeInzet);
                 }
                 else
                 {
                     fieldCount = inzet.Count();
-                    Titles = inzet;
+                    titles = inzet;
                 }
                 i++;
             }
@@ -179,6 +187,12 @@ namespace KnrmVaarRaport
 
         private static double CalculateHours(DateTime oproep, DateTime terug)
         {
+            if (oproep.Hour == 0 && oproep.Minute == 0 && oproep.Second == 0 && oproep.Millisecond == 0)
+            {
+#if DEBUG
+                Debugger.Break();
+#endif
+            }
             var vaarTijd = terug.Subtract(oproep);
             double hours = vaarTijd.TotalHours + (vaarTijd.Minutes / 60);
             return hours;
