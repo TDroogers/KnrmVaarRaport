@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Globalization;
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace KnrmVaarRaport
 {
@@ -23,8 +22,9 @@ namespace KnrmVaarRaport
         {
             try
             {
-                ReadFileActierapporten();
-                ReadFileOverig();
+                ReadFileActiesAfas();
+                //ReadFileActierapporten();
+                //ReadFileOverig();
                 AskToContinue();
                 var timeTicks = DateTime.Now.Ticks;
                 WriteResultFile(timeTicks);
@@ -34,6 +34,59 @@ namespace KnrmVaarRaport
             {
                 Console.WriteLine("The file could not be read:");
                 Console.WriteLine(e.Message);
+            }
+        }
+
+        private static void ReadFileActiesAfas()
+        {
+            
+            using var sr = new StreamReader("export-bemanning.csv");
+            int i = 0;
+            int fieldCount = 0;
+            string[]? titles = null;
+            while (true)
+            {
+                var line = sr.ReadLine();
+                if (line == null) break;
+                var inzet = SplitCsv.Split(line, sr, ';');
+                if (i != 0 && titles is not null)
+                {
+                    if (fieldCount != inzet.Count())
+                    {
+#if DEBUG
+                        Debugger.Break();
+#endif
+                        continue;
+                    }
+                    var datum = DateTime.Parse(inzet[GetIndex(titles, "Tijdstip alarm")]);
+                    if (!datum.Year.Equals(_year))
+                        continue;
+                    var omschrijving = inzet[GetIndex(titles, "Aard van de actie")];
+                    if (_typeInzetToIgnore.Contains(omschrijving))
+                        continue;
+                    var hours = CalculateHours(DateTime.Parse(inzet[GetIndex(titles, "Tijdstip alarm")]), DateTime.Parse(inzet[GetIndex(titles, "Tijdstip uitruk gereed")]));
+                    var person = (inzet[GetIndex(titles, "Persoon")]).Trim();
+                    var boot = UpdateBoot("NWI", hours);
+                    var windkracht = inzet[GetIndex(titles, "Windkracht")];
+                    var behoevenVan = inzet[GetIndex(titles, "Actie ten behoeve van")];
+                    var windrichting = inzet[GetIndex(titles, "Windrichting")];
+                    int.TryParse(inzet[GetIndex(titles, "Aantal geredden")], out var aantalGeredden);
+                    int.TryParse(inzet[GetIndex(titles, "Aantal dieren")], out var aantalDieren);
+                    var typeInzet = UpdateTypeInzet(omschrijving, hours, boot, "", windkracht, [], aantalGeredden, aantalDieren, 0, behoevenVan, "", "", "", "", windrichting, "", "", "");
+                    UpdateKnrmHelper(person, hours, typeInzet, boot);
+#if DEBUG
+                    if (hours > 5)
+                    {
+                        Debugger.Break();
+                    }
+#endif
+                }
+                else
+                {
+                    fieldCount = inzet.Count();
+                    titles = inzet;
+                }
+                i++;
             }
         }
 
@@ -81,7 +134,7 @@ namespace KnrmVaarRaport
                     var windrichting = inzet[GetIndex(titles, "Windrichting")];
                     var zicht = inzet[GetIndex(titles, "Zicht")];
                     var oproepGedaanDoor = inzet[GetIndex(titles, "Oproep gedaan door")];
-                    var andereHulpverleners = SplitCsv.ToArray(inzet[GetIndex(titles, "Andere hulpverleners")]);
+                    var andereHulpverleners = SplitCsv.ToArray(inzet[GetIndex(titles, "Andere hulpverleners")], ',');
                     var vaartuiggroep = inzet[GetIndex(titles, "Ten behoeve van")];
                     var oorzaken = inzet[GetIndex(titles, "Oorzaken")];
                     var positie = inzet[GetIndex(titles, "Gebied")];
@@ -155,7 +208,7 @@ namespace KnrmVaarRaport
                     var windrichting = inzet[GetIndex(titles, "Windrichting")];
                     var zicht = inzet[GetIndex(titles, "Zicht")];
                     var fonteinkruid = inzet[GetIndex(titles, "Problemen met fonteinkruid?")];
-                    var andereHulpverleners = SplitCsv.ToArray(inzet[GetIndex(titles, "Andere partners")]);
+                    var andereHulpverleners = SplitCsv.ToArray(inzet[GetIndex(titles, "Andere partners")], ',');
                     var boot = UpdateBoot(inzet[GetIndex(titles, "Boot")], hours);
                     var typeInzet = UpdateTypeInzet(omschrijving, hours, boot, weer, windkracht, andereHulpverleners, 0, 0, 0, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, windrichting, zicht, string.Empty, fonteinkruid);
 
