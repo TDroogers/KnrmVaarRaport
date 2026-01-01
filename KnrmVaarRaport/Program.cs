@@ -6,7 +6,7 @@ namespace KnrmVaarRaport
 {
     public static class Program
     {
-        private static int _year = 2024;
+        private static int _year = 2025;
         private static string _path = string.Empty;
         private static readonly SortedDictionary<string, KnrmHeld> _sdHelden = new();
         private static readonly SortedDictionary<string, TypeInzet> _sdInzet = new();
@@ -22,9 +22,9 @@ namespace KnrmVaarRaport
         {
             try
             {
-                ReadFileActiesAfas();
-                //ReadFileActierapporten();
-                //ReadFileOverig();
+                //ReadFileActiesAfas();
+                ReadFileActierapporten();
+                ReadFileOverig();
                 AskToContinue();
                 var timeTicks = DateTime.Now.Ticks;
                 WriteResultFile(timeTicks);
